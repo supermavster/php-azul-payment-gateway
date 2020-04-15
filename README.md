@@ -73,6 +73,8 @@ Si desean probar los servicios directamente con Postman se puede hacer [aquí](h
       
       ***Nota:** Se pueden generar tarjetas de credito en el siguiente enlace: [Aquí](https://ccardgenerator.com/bulk-generate-visa-cards.php) uso de pruebas solamente*
       
+      d. Para pasar a producción simplemente en el archivo [Config.json](https://github.com/supermavster/php-azul-payment-gateway/blob/master/cert/Config.json) cambiar `debug` a `true`. *Si configuraron bien los datos solicitados funcionara sin ningun problema en testing y production*.
+      
 6. Ejecute el archivo index.php con el comando `php -f index.php`.
 7. Disfrute los resultados.
 
