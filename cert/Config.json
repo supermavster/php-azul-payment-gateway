@@ -1,0 +1,22 @@
+{
+    "debug": true,
+    "publicPath": "/home/",
+    "typeService": "JSON",
+    "contentType": "application/json",
+    "customerServicePhone": "809-999-9999",
+    "eCommerceUrl": "http://XXXXXX.com",
+    "test" : {
+        "url": "pruebas",
+        "store": 00000000000,
+        "merchantId": 00000000000,
+        "authOne"       : "XXXXXXXX",
+        "authTwo"       : "XXXXXXXX"
+    },
+    "production":{
+        "url": "pagos",
+        "store": 00000000000,
+        "merchantId": 00000000000,
+        "authOne"       : "XXXXXXXX",
+        "authTwo"       : "XXXXXXXX"
+    }
+}

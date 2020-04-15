@@ -1,0 +1,21 @@
+{
+    "name": "mavster/php-azul-payment-gateway",
+    "description": "The easy way to use Azul Payment Gateway in PHP",
+    "license": "MIT",
+    "type": "library",
+    "minimum-stability": "stable",
+    "authors": [
+        {
+            "name": "Miguel Ángel Torres Vargas",
+            "email": "ingeniero.miguelvargas@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.29",
+        "guzzlehttp/guzzle": "^6.5",
+        "symfony/var-dumper": "^5.0"
+    },
+    "autoload": {
+      "classmap": [ "core/", "test/" ]
+    }
+}
