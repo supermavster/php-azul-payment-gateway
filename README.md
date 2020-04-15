@@ -60,8 +60,97 @@ Si desean probar los servicios directamente con Postman se puede hacer [aquí](h
       b. Se debe tener en cuenta que en la carpeta [cert](https://github.com/supermavster/php-azul-payment-gateway/tree/master/cert) existen dos folders `test` y `production` en ellos deben de poner los archivos dados por Azul, tal como azul.key y azul.csr o de ser azul.pem con permisos
       
       `chmod 664 azul.key` y `chmod 664 azul.csr`
+      
+      c. En el archivo [index.php](https://github.com/supermavster/php-azul-payment-gateway/blob/master/index.php) se debe de proporcionar información de tarjetas de credito para su prueba y uso:
+      ```
+      // CC
+        'CardNumber' => 'XXXXXXXXXXXX',
+        'Expiration' => 'YYYYMM',
+        'CVC' => 'XXX'
+      ```
+      
+      **Aclaración:** La fecha de expedición por parte de la tarjeta de credito debe tener el formato AÑOMES (YYYYMM) 
+      
+      ***Nota:** Se pueden generar tarjetas de credito en el siguiente enlace: [Aquí](https://ccardgenerator.com/bulk-generate-visa-cards.php) uso de pruebas solamente*
+      
 6. Ejecute el archivo index.php con el comando `php -f index.php`.
 7. Disfrute los resultados.
+
+# Métodos
+Todos estos procesos se encuentran en el archivo [index.php](https://github.com/supermavster/php-azul-payment-gateway/blob/master/index.php) y el archivo [TestProcess.php](https://github.com/supermavster/php-azul-payment-gateway/blob/master/test/TestProcess.php) indicando el flujo del software y los valores que deben de tener cada uno de los métodos mencionados.
+
+**Recordar:** Para la llamada de los siguientes métodos se inicializa la clase.
+```
+$paymentMethod = new AzulPayment();
+$data = [
+  'CustomOrderId' => 'SALE-1',
+  'OrderNumber' => 'ORDER-1',
+  // Value
+  'Amount' => 650730,
+  'Itbis' => 99264,
+  // CC
+  'CardNumber' => '4111134628626504',
+  'Expiration' => '202206', // YYYYMM
+  'CVC' => '583'
+];
+```
+
+## Sale
+```
+ $sale = $paymentMethod->makeAction($data);
+```
+## Verify Payment
+```
+$verifyPayment =   $paymentMethod->makeAction(['CustomOrderId' => $data['CustomOrderId'], 'VerifyPayment');
+```
+## Void Payment
+```
+$voidPayment =   $paymentMethod->makeAction(['AzulOrderId' => $sale->AzulOrderId], 'ProcessVoid');
+```
+## Hold Payment
+```
+$data = array_replace($data, ['CustomOrderId' => 'HOLD-1', 'OrderNumber' => 'ORDER-3']);
+$data = array_merge(['TrxType' => "Hold"], $data);
+$hold = $paymentMethod->makeAction($data);
+
+```
+## Post Payment
+```
+$hold = $paymentMethod->makeAction([
+    'Amount' => 650731,
+    'Itbis' => 99265,
+    'AzulOrderId' => $hold->AzulOrderId
+], 'ProcessPost');
+```
+## Make Token (Data Vault)
+```
+$token = $paymentMethod->makeAction([
+  'TrxType' => "CREATE",
+  'CardNumber' => '4111134628626504',
+  'Expiration' => '202206', // YYYYMM
+  'CVC' => '583'
+], 'ProcessDataVault');
+$tokenValue = $tempToken->DataVaultToken;
+```
+
+## Pay with Token (Data Vault Sale)
+```
+$tokenSale = $paymentMethod->makeAction([
+    'TrxType' => 'Sale',
+    'Amount' => 110000,
+    'Itbis' => 51000,
+    'DataVaultToken' => $tokenValue
+], 'ProcessDataVault');
+```
+## Remove Token 
+```
+$removeToken = $paymentMethod->makeAction([
+   'TrxType' => "DELETE", 
+   'DataVaultToken' => $tokenValue
+], 'ProcessDataVault');
+```
+
+**Nota:** Utilizando este proyecto te permitira hacer pagos con token ya que este proceso tiene una configuración especial para que funcione con Azul.
 
 # Resultado de las pruebas (TESTING)
 
