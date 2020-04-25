@@ -78,6 +78,35 @@ Si desean probar los servicios directamente con Postman se puede hacer [aquí](h
 6. Ejecute el archivo index.php con el comando `php -f index.php`.
 7. Disfrute los resultados.
 
+# Tener en cuenta
+Cuando Azul hace referencia a Itbis y Amount hace referencia al pago o dinero que se va a consignar (valga la redundancia), pero lo que no dicen es como funciona esos datos, más información de lo anterior [aquí](https://github.com/mrjeanp/azul-php/wiki#campos-de-requerimiento-referencia):
+
+Por parte de la libreria nos mencionan
+
+| Key                         | Description                                                                                    |
+|-----------------------------|------------------------------------------------------------------------------------------------|
+| Amount                      | Monto total de la transacción (Impuestos incluidos.) Se envia sin coma ni punto. los dos últimos digitos representan los decimales. Ei. 1000 equivale a 10.00 Ej: 1748321 equivale a 17,483.21 |
+| ITBIS                       | Igual formato que el campo Amount Si Ia transacción o el negocio estén exentos, se envia en cero o simplemente no incluir en la solicitud. |
+
+Con un ejemplo se entiende más:
+
+**Amount:**
+Si yo quiero pagar 15000 debo adiocionar dos ceros más los cuales son los decimales solicitados quedando de la siguiente manera: 1500000
+
+| Valor | Valor a Enviar |
+|-------|----------------|
+|15000  |1500000         |
+|5000   |500000          |
+|13400  |1340000         |
+|6900   |690000          |
+
+
+*Nota:* Por ende al valor que deseo recibir debo asociarle dos ceros al final SIN NINGUN PUNTO NI COMA.
+
+**ITBIS:**
+Si el negocio esta exento de esto, se pone 0 pero por lo general prefiero poner **10**. Para que así funcione la pasarela sin ningun problema.
+
+
 # Métodos
 Todos estos procesos se encuentran en el archivo [index.php](https://github.com/supermavster/php-azul-payment-gateway/blob/master/index.php) y el archivo [TestProcess.php](https://github.com/supermavster/php-azul-payment-gateway/blob/master/test/TestProcess.php) indicando el flujo del software y los valores que deben de tener cada uno de los métodos mencionados.
 
@@ -88,8 +117,8 @@ $data = [
   'CustomOrderId' => 'SALE-1',
   'OrderNumber' => 'ORDER-1',
   // Value
-  'Amount' => 650730,
-  'Itbis' => 99264,
+  'Amount' => 1500000,
+  'Itbis' => 10,
   // CC
   'CardNumber' => '4111134628626504',
   'Expiration' => '202206', // YYYYMM
@@ -119,8 +148,8 @@ $hold = $paymentMethod->makeAction($data);
 ## Post Payment
 ```
 $hold = $paymentMethod->makeAction([
-    'Amount' => 650731,
-    'Itbis' => 99265,
+    'Amount' => 65300,
+    'Itbis' => 10,
     'AzulOrderId' => $hold->AzulOrderId
 ], 'ProcessPost');
 ```
@@ -140,7 +169,7 @@ $tokenValue = $tempToken->DataVaultToken;
 $tokenSale = $paymentMethod->makeAction([
     'TrxType' => 'Sale',
     'Amount' => 110000,
-    'Itbis' => 51000,
+    'Itbis' => 10,
     'DataVaultToken' => $tokenValue
 ], 'ProcessDataVault');
 ```
