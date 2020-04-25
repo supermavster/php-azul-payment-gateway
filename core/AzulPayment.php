@@ -3,18 +3,13 @@
 namespace Core;
 
 # Add Library
-
 use Exception;
 use stdClass;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ConnectException;
 
 class  AzulPayment
 {
-
     // Variables and Const
-    private $configData = './cert/Config.json';
+    private $configData = './cert/Config.json'; // In server: /home/public/cert/Config.json
 
     // POST
     private $headers;
@@ -27,20 +22,25 @@ class  AzulPayment
     public function __construct()
     {
         set_time_limit(0);
-        ini_set('max_execution_time', 0); //0=NOLIMIT
+        ini_set('max_execution_time', 0); // 0 = NOLIMIT
         // Config Data
-        self::configEnvironments();
+        try { // Set Config
+            self::configEnvironments();
+        } catch (Exception $ex) {
+            dump($ex->getMessage());
+            exit();
+        }
     }
 
     private function configEnvironments()
     {
         $jsonFile = file_get_contents($this->configData);
-        if ($jsonFile === false) {
+        if (checkIsEmpty($jsonFile)) {
             throw new AzulPaymentException("The file {$this->configData} doesn't exist");
         }
 
         $jsonIterator = json_decode($jsonFile, TRUE);
-        if ($jsonIterator === null) {
+        if (checkIsEmpty($jsonIterator)) {
             throw new AzulPaymentException("No data in the file {$this->configData}");
         }
         // Set Data
@@ -129,14 +129,17 @@ class  AzulPayment
         $requestObject                       = new \stdClass();
         $requestObject->Store                = $tempData->Store;
         $requestObject->MerchantId                = $tempData->MerchantId;
-        $requestObject->ECommerceUrl         = $tempData->eCommerceUrl;
-        $requestObject->CustomerServicePhone = $tempData->customerServicePhone;
+        $requestObject->ECommerceUrl         = $tempData->ECommerceUrl;
+        $requestObject->CustomerServicePhone = $tempData->CustomerServicePhone;
         $requestObject->Channel = $tempData->Channel;
         $requestObject->PosInputMode = $tempData->PosInputMode;
         $requestObject->TrxType = $tempData->TrxType;
         $requestObject->Amount = $tempData->Amount;
-        $requestObject->Itbis = $tempData->Itbis;
         $requestObject->DataVaultToken = $tempData->DataVaultToken;
+        // Check Data
+        if (isset($tempData->Itbis)) {
+            $requestObject->Itbis = $tempData->Itbis;
+        }
         // Data Base
         $requestObject->CardNumber = "";
         $requestObject->Expiration = "";
@@ -174,17 +177,42 @@ class  AzulPayment
         // Make Data
         $url = self::endpoint($query);
         $requestObject = self::makeTempObject($requestObject);
-        $dataSend = [
-            'headers' => $this->headers,
-            'json'    => $requestObject,
-            'cert'    => $this->certificatePath,
-            'ssl_key' => $this->keyPath,
-        ];
         // Send Data
         try {
-            $client = new Client();
-            $result = $client->post($url, $dataSend);
-            $result = json_decode($result->getBody());
+            $headers = [
+                'Content-Type: {$this->headers['Content-type']}',
+                "Auth1: {$this->headers['Auth1']}",
+                "Auth2: {$this->headers['Auth2']}",
+            ];
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_FAILONERROR, true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => false,
+                CURLOPT_CONNECTTIMEOUT => false,
+                CURLOPT_POSTFIELDS => json_encode($requestObject),
+                CURLOPT_HTTPHEADER => $headers,
+                CURLOPT_URL => trim($url),
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false
+            ]);
+
+            $this->certificatePath && curl_setopt($ch, CURLOPT_SSLCERT, $this->certificatePath);
+            $this->keyPath && curl_setopt($ch, CURLOPT_SSLKEY, $this->keyPath);
+            $result = curl_exec($ch);
+            $response = json_decode($result);
+            // Show Error
+            $errno = curl_errno($ch);
+            if ($errno) {
+                $message = "cURL ({$errno}): " . curl_strerror($errno) . ", " . curl_error($ch);
+                curl_close($ch);
+                throw new AzulPaymentException($message, $response);
+            } else {
+                curl_close($ch);
+                // Return Result
+                $result = $response;
+            }
         } catch (Exception $e) {
             $result   = $e->getMessage();
         }
